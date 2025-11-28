@@ -13,7 +13,7 @@
     </script>
   </head>
   <body class="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen">
-    <div id="app" class="max-w-md mx-auto p-6">
+    <div id="app" class="max-w-4xl mx-auto p-6">
       <!-- Header -->
       <div class="text-center mb-8">
         <h1
@@ -21,99 +21,126 @@
         >
           🏷️ Raberu
         </h1>
-        <p class="text-slate-600">Price Label Printer Demo</p>
+        <p class="text-slate-600">CSV Price Label Printer</p>
       </div>
 
-      <!-- Product Form -->
+      <!-- CSV Input -->
       <div
         class="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-slate-100"
       >
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2"
-              >Product Name</label
-            >
-            <input
-              v-model="product.name"
-              @keyup.enter="addToQueue"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              placeholder="iPhone 15 Pro"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2"
-              >Price (Rp)</label
-            >
-            <input
-              v-model="product.price"
-              @keyup.enter="addToQueue"
-              type="number"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              placeholder="15999000"
-            />
-          </div>
-          <button
-            @click="addToQueue"
-            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
-          >
-            ➕ Add to Print Queue
-          </button>
-        </div>
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">📋 Paste CSV</h3>
+        <textarea
+          v-model="csvInput"
+          @input="parseCsv"
+          placeholder="nama,harga&#10;See U Napkin,16000&#10;Paseo Travel Pack,3000"
+          rows="6"
+          class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-mono text-sm"
+        ></textarea>
       </div>
 
-      <!-- Print Queue -->
-      <div class="bg-white rounded-2xl shadow-xl p-6 border border-slate-100">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-slate-800">
-            Print Queue ({{ printQueue.length }})
-          </h2>
-          <button
-            @click="printAll"
-            :disabled="printQueue.length === 0"
-            class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            🖨️ Print All
-          </button>
-        </div>
-
-        <!-- Queue Items -->
-        <div
-          v-if="printQueue.length === 0"
-          class="text-center py-12 text-slate-500"
-        >
-          <div
-            class="w-16 h-16 bg-slate-100 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-          >
-            📋
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Items List -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-slate-100">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-slate-800">
+              Items ({{ filteredItems.length }})
+            </h3>
+            <button
+              @click="addToQueue"
+              :disabled="selectedItems.length === 0"
+              class="px-4 bg-indigo-600 text-white py-2 rounded-xl text-sm font-semibold"
+            >
+              ➕ Add Selected
+            </button>
+            <input
+              v-model="searchQuery"
+              placeholder="🔍 Search..."
+              class="px-3 py-2 border border-slate-200 rounded-xl text-sm w-48 focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
-          <p>Add products to start printing labels!</p>
-        </div>
 
-        <div v-else class="space-y-3 max-h-96 overflow-y-auto">
           <div
-            v-for="(item, index) in printQueue"
-            :key="index"
-            class="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+            v-if="items.length === 0"
+            class="text-center py-12 text-slate-500"
           >
-            <div>
-              <div class="font-semibold text-slate-800">{{ item.name }}</div>
-              <div class="text-2xl font-bold text-indigo-600">
-                Rp {{ formatPrice(item.price) }}
+            <p>Paste CSV above to load items</p>
+          </div>
+
+          <div v-else class="space-y-3 max-h-96 overflow-y-auto">
+            <div
+              v-for="item in filteredItems"
+              :key="item.nama"
+              class="flex items-center p-4 bg-gradient-to-r from-slate-50 to-indigo-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+            >
+              <input
+                type="checkbox"
+                v-model="selectedItems"
+                :value="item"
+                class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 mr-3"
+              />
+              <div class="flex-1">
+                <div class="font-semibold text-slate-800">{{ item.nama }}</div>
+                <div class="text-lg font-bold text-indigo-600">
+                  Rp {{ formatPrice(item.harga) }}
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Print Queue -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-slate-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-slate-800">
+              Print Queue ({{ printQueue.length }})
+            </h2>
             <button
-              @click="removeFromQueue(index)"
-              class="text-red-500 hover:text-red-700 font-semibold p-2 hover:bg-red-100 rounded-full transition-colors"
+              @click="printAll"
+              :disabled="printQueue.length === 0"
+              class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              🗑️
+              🖨️ Print All
             </button>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              v-for="(item, index) in printQueue"
+              :key="index"
+              class="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-emerald-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+            >
+              <div>
+                <div class="font-semibold text-slate-800">{{ item.nama }}</div>
+                <div class="text-2xl font-bold text-emerald-600">
+                  Rp {{ formatPrice(item.harga) }}
+                </div>
+              </div>
+              <button
+                @click="removeFromQueue(index)"
+                class="text-red-500 hover:text-red-700 font-semibold p-2 hover:bg-red-100 rounded-full transition-colors"
+              >
+                🗑️
+              </button>
+            </div>
+
+            <div
+              v-if="printQueue.length === 0"
+              class="text-center py-12 text-slate-500"
+            >
+              <div
+                class="w-16 h-16 bg-slate-100 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+              >
+                📋
+              </div>
+              <p>Select items from list above</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Printer selection -->
+      <!-- Printer selection (same as before) -->
       <div
-        class="bg-white rounded-2xl shadow-xl p-4 mt-4 border border-slate-100"
+        class="bg-white rounded-2xl shadow-xl p-4 mt-8 border border-slate-100"
       >
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-semibold text-slate-800">Printer</h3>
@@ -149,11 +176,6 @@
           </button>
         </div>
       </div>
-
-      <!-- Android Print Bridge -->
-      <div id="print-bridge" style="display: none">
-        <div id="print-content"></div>
-      </div>
     </div>
 
     <script>
@@ -162,28 +184,55 @@
       createApp({
         data() {
           return {
-            product: { name: "", price: "" },
+            csvInput: "",
+            items: [],
+            searchQuery: "",
+            selectedItems: [],
             printQueue: [],
             printers: [],
             selectedPrinter: null,
+            product: { name: "", price: "" },
           };
         },
+        computed: {
+          filteredItems() {
+            if (!this.searchQuery) return this.items;
+            const q = this.searchQuery.toLowerCase();
+            return this.items.filter(
+              (item) =>
+                item.nama.toLowerCase().includes(q) ||
+                this.formatPrice(item.harga).includes(q)
+            );
+          },
+        },
         methods: {
-          watch: {
-            selectedPrinter(newVal) {
-              if (newVal) {
-                localStorage.setItem("raberu_printer_mac", newVal);
+          parseCsv() {
+            try {
+              const lines = this.csvInput.trim().split("\n");
+              if (lines.length < 2) {
+                this.items = [];
+                return;
               }
-            },
-          },
-          addToQueue() {
-            if (this.product.name.trim() && this.product.price) {
-              this.printQueue.push({ ...this.product });
-              this.product = { name: "", price: "" };
+
+              const headers = lines[0].split(",");
+              const namaIdx = headers.indexOf("nama");
+              const hargaIdx = headers.indexOf("harga");
+
+              if (namaIdx === -1 || hargaIdx === -1) {
+                console.error("CSV must have 'nama' and 'harga' columns");
+                return;
+              }
+
+              this.items = lines.slice(1).map((line) => {
+                const cols = line.split(",");
+                return {
+                  nama: cols[namaIdx] || "",
+                  harga: Number(cols[hargaIdx]) || 0,
+                };
+              });
+            } catch (e) {
+              console.error("CSV parse error:", e);
             }
-          },
-          removeFromQueue(index) {
-            this.printQueue.splice(index, 1);
           },
           formatPrice(value) {
             const n = Number(value || 0);
@@ -192,6 +241,15 @@
               maximumFractionDigits: 0,
               useGrouping: true,
             });
+          },
+          addToQueue() {
+            if (this.selectedItems.length > 0) {
+              this.printQueue.push(...this.selectedItems);
+              this.selectedItems = [];
+            }
+          },
+          removeFromQueue(index) {
+            this.printQueue.splice(index, 1);
           },
           onPrinterChange() {
             if (this.selectedPrinter) {
@@ -203,7 +261,6 @@
               const json = window.Android.getPairedPrinters();
               try {
                 this.printers = JSON.parse(json);
-
                 const saved = localStorage.getItem("raberu_printer_mac");
                 if (saved && this.printers.some((p) => p.address === saved)) {
                   this.selectedPrinter = saved;
@@ -217,17 +274,14 @@
           },
           buildEscposText() {
             let out = "";
-
             this.printQueue.forEach((item) => {
-              const name = item.name;
-              const price = this.formatPrice(item.price); // your existing formatter
-
+              const name = item.nama;
+              const price = this.formatPrice(item.harga);
               out += "[C]<b><font size='big'>" + name + "</font></b>\n";
               out += "[C]<b><font size='tall'>Rp " + price + "</font></b>\n";
               out += "\n";
             });
-
-            out += "\n\n\n"; // feed paper
+            out += "\n\n\n";
             return out;
           },
           printAll() {
@@ -241,8 +295,6 @@
             }
             const escpos = this.buildEscposText();
             window.Android.printRawTo(this.selectedPrinter, escpos);
-
-            // clear queue after print
             this.printQueue = [];
           },
           testPrint() {
@@ -259,24 +311,12 @@
               "[C]Hello from Vue\n\n\n";
             window.Android.printRawTo(this.selectedPrinter, escpos);
           },
-          showPrintPreview() {
-            const preview = this.printQueue
-              .map(
-                (item) => `
-                            <div style="width: 200px; padding: 12px; border: 2px dashed #ccc; margin-bottom: 8px; font-family: monospace;">
-                                <div style="font-size: 18px; font-weight: bold;">${
-                                  item.name
-                                }</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #007bff;">Rp ${this.formatPrice(
-                                  item.price
-                                ).replace("Rp", "")}</div>
-                            </div>
-                        `
-              )
-              .join("");
-
-            document.getElementById("print-content").innerHTML = preview;
-            window.print();
+        },
+        watch: {
+          selectedItems: {
+            handler() {
+              // Auto-add when items selected (optional)
+            },
           },
         },
         mounted() {
