@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Purinto - Price Label Printer</title>
+    <title>Raberu - Price Label Printer</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -19,7 +19,7 @@
         <h1
           class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2"
         >
-          🏷️ Purinta
+          🏷️ Raberu
         </h1>
         <p class="text-slate-600">Price Label Printer Demo</p>
       </div>
@@ -172,7 +172,7 @@
           watch: {
             selectedPrinter(newVal) {
               if (newVal) {
-                localStorage.setItem("purinto_printer_mac", newVal);
+                localStorage.setItem("raberu_printer_mac", newVal);
               }
             },
           },
@@ -195,7 +195,7 @@
           },
           onPrinterChange() {
             if (this.selectedPrinter) {
-              localStorage.setItem("purinto_printer_mac", this.selectedPrinter);
+              localStorage.setItem("raberu_printer_mac", this.selectedPrinter);
             }
           },
           loadPrinters() {
@@ -204,7 +204,7 @@
               try {
                 this.printers = JSON.parse(json);
 
-                const saved = localStorage.getItem("purinto_printer_mac");
+                const saved = localStorage.getItem("raberu_printer_mac");
                 if (saved && this.printers.some((p) => p.address === saved)) {
                   this.selectedPrinter = saved;
                 } else if (this.printers.length > 0 && !this.selectedPrinter) {
@@ -255,7 +255,7 @@
               return;
             }
             const escpos =
-              "[C]<b><font size='big'>Purinto Test</font></b>\n" +
+              "[C]<b><font size='big'>Raberu Test</font></b>\n" +
               "[C]Hello from Vue\n\n\n";
             window.Android.printRawTo(this.selectedPrinter, escpos);
           },
@@ -280,7 +280,7 @@
           },
         },
         mounted() {
-          const saved = localStorage.getItem("purinto_printer_mac");
+          const saved = localStorage.getItem("raberu_printer_mac");
           if (saved) {
             this.selectedPrinter = saved;
           }
